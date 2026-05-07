@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary — Deep Indigo
-  static const Color primary = Color(0xFF3730A3);
-  static const Color primaryLight = Color(0xFF6366F1);
-  static const Color primaryDark = Color(0xFF1E1B4B);
-  static const Color primaryContainer = Color(0xFFE0E7FF);
+  // Primary — Webflow Blue
+  static const Color primary = Color(0xFF146EF5);
+  static const Color primaryLight = Color(0xFF3B82F6);
+  static const Color primaryDark = Color(0xFF0F4AC4);
+  static const Color primaryContainer = Color(0xFFDBEAFE);
 
   // Accent — Amber
   static const Color accent = Color(0xFFF59E0B);

@@ -43,43 +43,6 @@ class ExamEntry {
   });
 }
 
-final _now = DateTime.now();
-
-final _mockExams = [
-  ExamEntry(
-    id: '1',
-    course: 'Data Structures',
-    date: DateTime(_now.year, _now.month, _now.day + 3),
-    time: const TimeOfDay(hour: 9, minute: 0),
-    venue: 'Exam Hall A',
-    type: ExamType.midterm,
-  ),
-  ExamEntry(
-    id: '2',
-    course: 'Algorithms',
-    date: DateTime(_now.year, _now.month, _now.day + 7),
-    time: const TimeOfDay(hour: 11, minute: 0),
-    venue: 'Room 201',
-    type: ExamType.quiz,
-  ),
-  ExamEntry(
-    id: '3',
-    course: 'Database',
-    date: DateTime(_now.year, _now.month, _now.day + 14),
-    time: const TimeOfDay(hour: 14, minute: 0),
-    venue: 'Exam Hall B',
-    type: ExamType.finalExam,
-  ),
-  ExamEntry(
-    id: '4',
-    course: 'Networks Lab',
-    date: DateTime(_now.year, _now.month, _now.day + 5),
-    time: const TimeOfDay(hour: 13, minute: 0),
-    venue: 'CS Lab 2',
-    type: ExamType.lab,
-  ),
-];
-
 class ExamCalendarScreen extends StatefulWidget {
   const ExamCalendarScreen({super.key});
 
@@ -90,7 +53,7 @@ class ExamCalendarScreen extends StatefulWidget {
 class _ExamCalendarScreenState extends State<ExamCalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  List<ExamEntry> _exams = List.from(_mockExams);
+  List<ExamEntry> _exams = [];
 
   List<ExamEntry> _eventsForDay(DateTime day) {
     return _exams

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 
 // ── Mock data ──────────────────────────────────────────────────────────────
@@ -26,69 +25,6 @@ class ClassEntry {
   });
 }
 
-final _mockClasses = [
-  ClassEntry(
-    id: '1',
-    course: 'Data Structures',
-    day: 'Sun',
-    startTime: const TimeOfDay(hour: 8, minute: 0),
-    endTime: const TimeOfDay(hour: 9, minute: 30),
-    room: 'CS-101',
-    teacher: 'Dr. Rahman',
-    color: AppColors.primary,
-  ),
-  ClassEntry(
-    id: '2',
-    course: 'Algorithms',
-    day: 'Sun',
-    startTime: const TimeOfDay(hour: 10, minute: 0),
-    endTime: const TimeOfDay(hour: 11, minute: 30),
-    room: 'CS-202',
-    teacher: 'Prof. Islam',
-    color: AppColors.accent,
-  ),
-  ClassEntry(
-    id: '3',
-    course: 'Database',
-    day: 'Mon',
-    startTime: const TimeOfDay(hour: 8, minute: 0),
-    endTime: const TimeOfDay(hour: 9, minute: 30),
-    room: 'CS-103',
-    teacher: 'Dr. Hossain',
-    color: AppColors.success,
-  ),
-  ClassEntry(
-    id: '4',
-    course: 'Networks',
-    day: 'Tue',
-    startTime: const TimeOfDay(hour: 11, minute: 0),
-    endTime: const TimeOfDay(hour: 12, minute: 30),
-    room: 'CS-301',
-    teacher: 'Prof. Ali',
-    color: AppColors.info,
-  ),
-  ClassEntry(
-    id: '5',
-    course: 'Software Eng.',
-    day: 'Wed',
-    startTime: const TimeOfDay(hour: 9, minute: 0),
-    endTime: const TimeOfDay(hour: 10, minute: 30),
-    room: 'CS-204',
-    teacher: 'Dr. Khan',
-    color: const Color(0xFF8B5CF6),
-  ),
-  ClassEntry(
-    id: '6',
-    course: 'Data Structures',
-    day: 'Thu',
-    startTime: const TimeOfDay(hour: 8, minute: 0),
-    endTime: const TimeOfDay(hour: 9, minute: 30),
-    room: 'CS-101',
-    teacher: 'Dr. Rahman',
-    color: AppColors.primary,
-  ),
-];
-
 const _days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 class ClassRoutineScreen extends StatefulWidget {
@@ -100,7 +36,7 @@ class ClassRoutineScreen extends StatefulWidget {
 
 class _ClassRoutineScreenState extends State<ClassRoutineScreen> {
   bool _isGridView = true;
-  List<ClassEntry> _classes = List.from(_mockClasses);
+  List<ClassEntry> _classes = [];
 
   String _todayShort() {
     const map = {

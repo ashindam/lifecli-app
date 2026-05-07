@@ -6,47 +6,78 @@ import 'package:http/http.dart' as http;
 
 class GoogleAuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static bool _initialized = false;
 
   static User? get currentUser => _auth.currentUser;
   static bool get isSignedIn => _auth.currentUser != null;
 
+  // Holds the last sign-in error so the UI can display it
+  static String? lastError;
+
   static Future<void> init() async {
-    // Firebase automatically restores the session — nothing extra needed
+    if (!kIsWeb && !_initialized) {
+      await GoogleSignIn.instance.initialize();
+      _initialized = true;
+    }
   }
 
   static Future<User?> signIn() async {
+    lastError = null;
     try {
       if (kIsWeb) {
-        // Web: use Firebase popup sign-in
         final provider = GoogleAuthProvider();
         final userCredential = await _auth.signInWithPopup(provider);
         return userCredential.user;
       } else {
-        // Mobile: use google_sign_in + Firebase credential
-        final googleSignIn = GoogleSignIn(
-          scopes: ['email', 'profile', drive.DriveApi.driveAppdataScope],
-        );
-        final googleUser = await googleSignIn.signIn();
-        if (googleUser == null) return null;
+        await init();
 
-        final googleAuth = await googleUser.authentication;
-        final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
-          idToken: googleAuth.idToken,
-        );
+        GoogleSignInAccount? googleAccount;
+
+        // 1. Try silent/lightweight sign-in first (won't show UI)
+        try {
+          final lightweightFuture =
+              GoogleSignIn.instance.attemptLightweightAuthentication();
+          if (lightweightFuture != null) {
+            googleAccount = await lightweightFuture;
+          }
+        } catch (e) {
+          // Silent auth failed or not available — fall through to interactive
+          debugPrint('Lightweight sign-in skipped: $e');
+        }
+
+        // 2. Full interactive sign-in (shows Google sheet to user)
+        if (googleAccount == null) {
+          googleAccount = await GoogleSignIn.instance.authenticate();
+        }
+
+        // 3. Exchange Google token for Firebase credential
+        final idToken = googleAccount.authentication.idToken;
+        if (idToken == null) {
+          lastError = 'Google did not return an ID token. Try again.';
+          debugPrint('Sign-in error: $lastError');
+          return null;
+        }
+
+        final credential = GoogleAuthProvider.credential(idToken: idToken);
         final userCredential = await _auth.signInWithCredential(credential);
         return userCredential.user;
       }
+    } on FirebaseAuthException catch (e) {
+      lastError = '${e.code}: ${e.message}';
+      debugPrint('FirebaseAuth error: $lastError');
+      return null;
     } catch (e) {
-      debugPrint('Sign-in error: $e');
+      lastError = e.toString();
+      debugPrint('Sign-in error: $lastError');
       return null;
     }
   }
 
   static Future<void> signOut() async {
+    lastError = null;
     await _auth.signOut();
     if (!kIsWeb) {
-      await GoogleSignIn().signOut();
+      await GoogleSignIn.instance.signOut();
     }
   }
 

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -129,10 +128,10 @@ class _MainShellState extends State<MainShell>
         context.pushNamed('task-add');
         break;
       case _QuickAction.addExpense:
-        context.go('/finance/expenses');
+        context.push('/expenses');
         break;
       case _QuickAction.pomodoro:
-        context.go('/focus/pomodoro');
+        context.push('/pomodoro');
         break;
       case _QuickAction.quickCapture:
         context.pushNamed('quick-capture');
@@ -169,42 +168,34 @@ class _MainShellState extends State<MainShell>
     );
   }
 
-  // ── Custom dark glassmorphism nav bar ─────────────────────────────────────
+  // ── Clean white nav bar ────────────────────────────────────────────────────
   Widget _buildNavBar(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          height: 80 + bottomPadding,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B).withOpacity(0.92),
-            border: const Border(
-              top: BorderSide(
-                color: Color(0x1AFFFFFF), // white ~10%
-                width: 1,
-              ),
-            ),
-          ),
-          child: SafeArea(
-            top: false,
-            child: SizedBox(
-              height: 80,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(_destinations.length, (i) {
-                  final dest = _destinations[i];
-                  final isSelected = i == _selectedIndex;
-                  return _NavItem(
-                    icon: isSelected ? dest.selectedIcon : dest.icon,
-                    label: dest.label,
-                    isSelected: isSelected,
-                    onTap: () => _onDestinationSelected(i),
-                  );
-                }),
-              ),
-            ),
+    return Container(
+      height: 64 + bottomPadding,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_destinations.length, (i) {
+              final dest = _destinations[i];
+              final isSelected = i == _selectedIndex;
+              return _NavItem(
+                icon: isSelected ? dest.selectedIcon : dest.icon,
+                label: dest.label,
+                isSelected: isSelected,
+                onTap: () => _onDestinationSelected(i),
+              );
+            }),
           ),
         ),
       ),
@@ -269,16 +260,11 @@ class _MainShellState extends State<MainShell>
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF6366F1), Color(0xFF14B8A6)],
-                      ),
+                      color: AppColors.primary,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.5),
-                          blurRadius: 20,
-                          spreadRadius: 2,
+                          color: AppColors.primary.withOpacity(0.3),
+                          blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -368,34 +354,27 @@ class _NavItem extends StatelessWidget {
             : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: isSelected
             ? BoxDecoration(
-                color: const Color(0xFF6366F1),
+                color: AppColors.primaryContainer,
                 borderRadius: BorderRadius.circular(100),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
               )
             : null,
         child: isSelected
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, color: Colors.white, size: 20),
+                  Icon(icon, color: AppColors.primary, size: 20),
                   const SizedBox(width: 6),
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               )
-            : Icon(icon, color: Colors.white38, size: 22),
+            : Icon(icon, color: const Color(0xFF94A3B8), size: 22),
       ),
     );
   }
@@ -424,35 +403,26 @@ class _SpeedDialItem extends StatelessWidget {
         // Label chip
         GestureDetector(
           onTap: onTap,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.12),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              ],
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

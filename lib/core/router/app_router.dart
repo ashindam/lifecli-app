@@ -6,6 +6,8 @@ import 'package:lifecli_app/core/services/google_auth_service.dart';
 import 'package:lifecli_app/features/shell/presentation/main_shell.dart';
 import 'package:lifecli_app/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:lifecli_app/features/auth/presentation/screens/login_screen.dart';
+import 'package:lifecli_app/features/auth/presentation/screens/signup_screen.dart';
+import 'package:lifecli_app/features/auth/presentation/screens/photo_selection_screen.dart';
 import 'package:lifecli_app/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:lifecli_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:lifecli_app/features/settings/presentation/screens/settings_screen.dart';
@@ -27,6 +29,9 @@ import 'package:lifecli_app/features/finance/presentation/screens/finance_screen
 import 'package:lifecli_app/features/subscriptions/presentation/screens/subscriptions_screen.dart';
 import 'package:lifecli_app/features/bill_splitter/presentation/screens/bill_splitter_screen.dart';
 import 'package:lifecli_app/features/tuition/presentation/screens/tuition_screen.dart';
+
+// Focus hub
+import 'package:lifecli_app/features/focus/presentation/screens/focus_hub_screen.dart';
 
 // Focus / productivity screens
 import 'package:lifecli_app/features/tasks/presentation/screens/tasks_screen.dart';
@@ -55,10 +60,13 @@ class AppRoutes {
 
   static const String onboarding = 'onboarding';
   static const String login = 'login';
+  static const String signup = 'signup';
+  static const String signupPhoto = 'signup-photo';
 
   // Shell tabs
   static const String home = 'home';
   static const String academic = 'academic';
+  static const String focus = 'focus';
   static const String more = 'more';
 
   // Academic sub-routes
@@ -121,11 +129,12 @@ class AppRouter {
 
         final isOnboarding = state.matchedLocation == '/onboarding';
         final isLogin = state.matchedLocation == '/login';
+        final isSignup = state.matchedLocation.startsWith('/signup');
 
         final isGuest = prefs.getBool('guest_mode') ?? false;
 
         if (!onboardingDone && !isOnboarding) return '/onboarding';
-        if (onboardingDone && !isSignedIn && !isGuest && !isLogin) return '/login';
+        if (onboardingDone && !isSignedIn && !isGuest && !isLogin && !isSignup) return '/login';
         if ((isSignedIn || isGuest) && isLogin) return '/home';
         return null;
       },
@@ -140,6 +149,18 @@ class AppRouter {
           path: '/login',
           name: AppRoutes.login,
           builder: (context, state) => const LoginScreen(),
+        ),
+        GoRoute(
+          path: '/signup',
+          name: AppRoutes.signup,
+          builder: (context, state) => const SignUpScreen(),
+        ),
+        GoRoute(
+          path: '/signup/photo',
+          name: AppRoutes.signupPhoto,
+          builder: (context, state) => PhotoSelectionScreen(
+            data: state.extra as Map<String, dynamic>? ?? {},
+          ),
         ),
 
         // ── Shell (bottom nav) ──────────────────────────────────────────
@@ -167,6 +188,20 @@ class AppRouter {
                 GoRoute(path: 'syllabus', name: AppRoutes.syllabus, builder: (_, __) => const SyllabusScreen()),
                 GoRoute(path: 'grades', name: AppRoutes.grades, builder: (_, __) => const GradeSimulatorScreen()),
               ],
+            ),
+
+            // Finance tab
+            GoRoute(
+              path: '/finance',
+              name: AppRoutes.finance,
+              pageBuilder: (context, state) => const NoTransitionPage(child: FinanceScreen()),
+            ),
+
+            // Focus tab
+            GoRoute(
+              path: '/focus',
+              name: AppRoutes.focus,
+              pageBuilder: (context, state) => const NoTransitionPage(child: FocusHubScreen()),
             ),
 
             // More tab
@@ -203,7 +238,6 @@ class AppRouter {
         GoRoute(path: '/weather', name: AppRoutes.weather, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const WeatherScreen()),
         GoRoute(path: '/expenses', name: AppRoutes.expenses, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const ExpensesScreen()),
         GoRoute(path: '/allowance', name: AppRoutes.allowance, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const AllowanceScreen()),
-        GoRoute(path: '/finance', name: AppRoutes.finance, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const FinanceScreen()),
         GoRoute(path: '/subscriptions', name: AppRoutes.subscriptions, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const SubscriptionsScreen()),
         GoRoute(path: '/bill-splitter', name: AppRoutes.billSplitter, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const BillSplitterScreen()),
         GoRoute(path: '/tuition', name: AppRoutes.tuition, parentNavigatorKey: rootNavigatorKey, builder: (_, __) => const TuitionScreen()),

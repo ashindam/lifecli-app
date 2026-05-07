@@ -60,54 +60,6 @@ class AssignmentEntry {
   }
 }
 
-final _mockAssignments = [
-  AssignmentEntry(
-    id: '1',
-    course: 'Data Structures',
-    title: 'BST Implementation',
-    weightage: 25,
-    dueDate: DateTime.now().add(const Duration(days: 2)),
-    submissionType: 'Code + Report',
-    status: AssignmentStatus.inProgress,
-  ),
-  AssignmentEntry(
-    id: '2',
-    course: 'Algorithms',
-    title: 'Sorting Analysis Report',
-    weightage: 15,
-    dueDate: DateTime.now().add(const Duration(days: 5)),
-    submissionType: 'PDF',
-    status: AssignmentStatus.notStarted,
-  ),
-  AssignmentEntry(
-    id: '3',
-    course: 'Database',
-    title: 'ER Diagram Assignment',
-    weightage: 30,
-    dueDate: DateTime.now().add(const Duration(days: 1)),
-    submissionType: 'PDF Upload',
-    status: AssignmentStatus.notStarted,
-  ),
-  AssignmentEntry(
-    id: '4',
-    course: 'Networks',
-    title: 'TCP/IP Presentation',
-    weightage: 10,
-    dueDate: DateTime.now().add(const Duration(days: 8)),
-    submissionType: 'Slides',
-    status: AssignmentStatus.done,
-  ),
-  AssignmentEntry(
-    id: '5',
-    course: 'Software Eng.',
-    title: 'SRS Document',
-    weightage: 20,
-    dueDate: DateTime.now().add(const Duration(days: 3)),
-    submissionType: 'Doc',
-    status: AssignmentStatus.submitted,
-  ),
-];
-
 class AssignmentsScreen extends StatefulWidget {
   const AssignmentsScreen({super.key});
 
@@ -122,7 +74,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
   @override
   void initState() {
     super.initState();
-    _assignments = List.from(_mockAssignments);
+    _assignments = [];
   }
 
   List<AssignmentEntry> get _filtered {

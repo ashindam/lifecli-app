@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/google_auth_service.dart';
 
 class AuthState {
@@ -56,6 +57,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> signOut() async {
     await GoogleAuthService.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('guest_mode');
     state = const AuthState();
   }
 

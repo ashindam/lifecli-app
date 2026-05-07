@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/finance_model.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -50,6 +51,10 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> with SingleTicker
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => context.go('/home'),
+        ),
         title: Text('Finance', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
         bottom: TabBar(controller: _tab, tabs: const [Tab(text: '💰 Loans (I Lent)'), Tab(text: '💸 Borrows (I Owe)')]),
       ),
@@ -90,11 +95,6 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> with SingleTicker
             ]),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddSheet(context, ref, _tab.index == 0 ? FinanceType.loan : FinanceType.borrow),
-        icon: const Icon(Icons.add), label: const Text('Add Record'),
-        backgroundColor: AppColors.primary, foregroundColor: Colors.white,
       ),
     );
   }
