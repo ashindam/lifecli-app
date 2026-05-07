@@ -7,9 +7,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/data/university_data.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/sync_provider.dart';
 import '../../../../core/widgets/confirmation_dialog.dart';
+import 'university_picker_screen.dart';
 
 // Provider that manages the local profile photo path
 final _profilePhotoProvider = StateNotifierProvider<_ProfilePhotoNotifier, String?>((ref) {
@@ -53,6 +55,35 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _picker = ImagePicker();
+  String? _universityName;
+  String? _universityShort;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUniversity();
+  }
+
+  Future<void> _loadUniversity() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _universityName = prefs.getString('university_name');
+      _universityShort = prefs.getString('university_short');
+    });
+  }
+
+  Future<void> _openUniversityPicker() async {
+    final result = await Navigator.push<BdUniversity>(
+      context,
+      MaterialPageRoute(builder: (_) => const UniversityPickerScreen()),
+    );
+    if (result != null) {
+      setState(() {
+        _universityName = result.name;
+        _universityShort = result.shortName;
+      });
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -136,7 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     // Decide what avatar to show: local photo > network photo > initial letter
-    final networkPhoto = auth.user?.photoUrl != null ? NetworkImage(auth.user!.photoUrl!) : null;
+    final networkPhoto = auth.user?.photoURL != null ? NetworkImage(auth.user!.photoURL!) : null;
     final displayPhoto = localPhoto ?? networkPhoto;
     final displayName = auth.user?.displayName ?? 'U';
     final initialLetter = displayName[0].toUpperCase();
@@ -254,10 +285,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onTap: () => context.push('/settings'),
               ),
               ListTile(
-                leading: const Icon(Icons.school_outlined),
-                title: const Text('University Settings'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/settings'),
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.school_rounded, color: AppColors.primary, size: 20),
+                ),
+                title: Text('My University', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  _universityName ?? 'Tap to select your university',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: _universityName != null ? AppColors.primary : Colors.grey,
+                    fontWeight: _universityName != null ? FontWeight.w500 : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: _universityShort != null
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(_universityShort!,
+                          style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: _openUniversityPicker,
               ),
               const Divider(indent: 16, endIndent: 16),
               ListTile(

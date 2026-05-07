@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,33 +15,87 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isLoading = false;
   String? _errorMessage;
-  late AnimationController _animController;
+
+  // Entry animation
+  late AnimationController _entryController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+
+  // Orb pulse animations
+  late AnimationController _orb1Controller;
+  late AnimationController _orb2Controller;
+  late AnimationController _orb3Controller;
+
+  late Animation<double> _orb1Scale;
+  late Animation<double> _orb1Opacity;
+  late Animation<double> _orb2Scale;
+  late Animation<double> _orb2Opacity;
+  late Animation<double> _orb3Scale;
+  late Animation<double> _orb3Opacity;
 
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
+
+    // Entry animation
+    _entryController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
     )..forward();
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-          parent: _animController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _entryController, curve: Curves.easeInOut),
     );
     _slideAnim =
         Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: _entryController, curve: Curves.easeOutCubic),
+    );
+
+    // Orb 1 — purple, top-left
+    _orb1Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3800),
+    )..repeat(reverse: true);
+    _orb1Scale = Tween<double>(begin: 0.92, end: 1.08).animate(
+      CurvedAnimation(parent: _orb1Controller, curve: Curves.easeInOut),
+    );
+    _orb1Opacity = Tween<double>(begin: 0.22, end: 0.38).animate(
+      CurvedAnimation(parent: _orb1Controller, curve: Curves.easeInOut),
+    );
+
+    // Orb 2 — teal, top-right
+    _orb2Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 5200),
+    )..repeat(reverse: true);
+    _orb2Scale = Tween<double>(begin: 0.88, end: 1.12).animate(
+      CurvedAnimation(parent: _orb2Controller, curve: Curves.easeInOut),
+    );
+    _orb2Opacity = Tween<double>(begin: 0.14, end: 0.28).animate(
+      CurvedAnimation(parent: _orb2Controller, curve: Curves.easeInOut),
+    );
+
+    // Orb 3 — blue, bottom-center
+    _orb3Controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4500),
+    )..repeat(reverse: true);
+    _orb3Scale = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _orb3Controller, curve: Curves.easeInOut),
+    );
+    _orb3Opacity = Tween<double>(begin: 0.10, end: 0.22).animate(
+      CurvedAnimation(parent: _orb3Controller, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _animController.dispose();
+    _entryController.dispose();
+    _orb1Controller.dispose();
+    _orb2Controller.dispose();
+    _orb3Controller.dispose();
     super.dispose();
   }
 
@@ -51,8 +106,8 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
-      final account = await GoogleAuthService.signIn();
-      if (account != null) {
+      final user = await GoogleAuthService.signIn();
+      if (user != null) {
         if (mounted) context.go('/home');
       } else {
         setState(() {
@@ -71,306 +126,382 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-                    const Color(0xFF0F172A),
-                    const Color(0xFF1E1B4B),
-                    const Color(0xFF0F172A),
-                  ]
-                : [
-                    const Color(0xFFF0F0FF),
-                    Colors.white,
-                    Colors.white,
-                  ],
+      backgroundColor: const Color(0xFF0F172A),
+      body: Stack(
+        children: [
+          // ── Animated orb: top-left purple ──────────────────────────────
+          Positioned(
+            top: -60,
+            left: -60,
+            child: AnimatedBuilder(
+              animation: _orb1Controller,
+              builder: (context, _) {
+                return Opacity(
+                  opacity: _orb1Opacity.value,
+                  child: Transform.scale(
+                    scale: _orb1Scale.value,
+                    child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF6366F1),
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SlideTransition(
-              position: _slideAnim,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: SizedBox(
-                  height: size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom,
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
 
-                      // App logo
-                      _AppLogo(),
-
-                      const SizedBox(height: 20),
-
-                      // Tagline
-                      Text(
-                        'Your academic life, organized',
-                        style: GoogleFonts.inter(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? Colors.white
-                              : const Color(0xFF0F172A),
-                        ),
-                        textAlign: TextAlign.center,
+          // ── Animated orb: top-right teal ────────────────────────────────
+          Positioned(
+            top: -40,
+            right: -60,
+            child: AnimatedBuilder(
+              animation: _orb2Controller,
+              builder: (context, _) {
+                return Opacity(
+                  opacity: _orb2Opacity.value,
+                  child: Transform.scale(
+                    scale: _orb2Scale.value,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF14B8A6),
                       ),
-
-                      const SizedBox(height: 8),
-
-                      // Sub-tagline
-                      Text(
-                        'For Bangladeshi university students',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: isDark
-                              ? Colors.white60
-                              : const Color(0xFF64748B),
-                        ),
-                        textAlign: TextAlign.center,
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+                        child: const SizedBox.expand(),
                       ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
 
-                      const Spacer(flex: 2),
+          // ── Animated orb: bottom-center blue ────────────────────────────
+          Positioned(
+            bottom: -80,
+            left: size.width / 2 - 125,
+            child: AnimatedBuilder(
+              animation: _orb3Controller,
+              builder: (context, _) {
+                return Opacity(
+                  opacity: _orb3Opacity.value,
+                  child: Transform.scale(
+                    scale: _orb3Scale.value,
+                    child: Container(
+                      width: 250,
+                      height: 250,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF3B82F6),
+                      ),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 55, sigmaY: 55),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
 
-                      // Illustration area
-                      _LoginIllustration(),
+          // ── Main content ────────────────────────────────────────────────
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 32),
+                    child: _GlassCard(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Logo
+                          _LogoMark(),
+                          const SizedBox(height: 16),
 
-                      const Spacer(flex: 2),
-
-                      // Error message
-                      if (_errorMessage != null)
-                        Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.errorContainer,
-                            borderRadius: BorderRadius.circular(12),
+                          // Title
+                          Text(
+                            'LifeCLI',
+                            style: GoogleFonts.inter(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                          child: Row(
+                          const SizedBox(height: 6),
+
+                          // Subtitle
+                          Text(
+                            'Your academic life, organized',
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.white60,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Feature pills row
+                          _FeaturePillsRow(),
+                          const SizedBox(height: 28),
+
+                          // Error message
+                          if (_errorMessage != null) ...[
+                            _ErrorBanner(message: _errorMessage!),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Google Sign-In button
+                          _GlassGoogleButton(
+                            isLoading: _isLoading,
+                            onPressed: _isLoading ? null : _signInWithGoogle,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Guest mode
+                          GestureDetector(
+                            onTap: () async {
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.setBool('guest_mode', true);
+                              if (mounted) context.go('/home');
+                            },
+                            child: Text(
+                              'Continue without signing in →',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white60,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Offline note
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.error_outline,
-                                  color: AppColors.error, size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: AppColors.error,
-                                  ),
+                              const Icon(Icons.wifi_off_rounded,
+                                  size: 13, color: Colors.white30),
+                              const SizedBox(width: 5),
+                              Text(
+                                'Works fully offline — sync when connected',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: Colors.white30,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-
-                      // Google Sign-In button
-                      _GoogleSignInButton(
-                        isLoading: _isLoading,
-                        onPressed: _isLoading ? null : _signInWithGoogle,
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Guest mode button
-                      TextButton(
-                        onPressed: () async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setBool('guest_mode', true);
-                          if (mounted) context.go('/home');
-                        },
-                        child: Text(
-                          'Continue without signing in →',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Offline note
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.wifi_off_rounded,
-                            size: 14,
-                            color: isDark
-                                ? Colors.white38
-                                : const Color(0xFF94A3B8),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Works fully offline — sync when connected',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.white38
-                                  : const Color(0xFF94A3B8),
-                            ),
-                          ),
                         ],
                       ),
-
-                      const Spacer(flex: 1),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── App logo ─────────────────────────────────────────────────────────────
-
-class _AppLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Icon mark
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF3730A3), Color(0xFF6366F1)],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.35),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'LC',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Wordmark with gradient
-        ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFF3730A3), Color(0xFF6366F1)],
-          ).createShader(bounds),
-          child: Text(
-            'LifeCLI',
-            style: GoogleFonts.inter(
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Login illustration ────────────────────────────────────────────────────
-
-class _LoginIllustration extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primaryContainer,
-            AppColors.primaryContainer.withOpacity(0.4),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _FeatureChip(icon: Icons.check_circle_outline, label: 'Tasks'),
-          _FeatureChip(icon: Icons.school_outlined, label: 'Academic'),
-          _FeatureChip(icon: Icons.account_balance_wallet_outlined, label: '৳ Finance'),
-          _FeatureChip(icon: Icons.timer_outlined, label: 'Focus'),
         ],
       ),
     );
   }
 }
 
-class _FeatureChip extends StatelessWidget {
-  const _FeatureChip({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
+// ─── Glassmorphism card ────────────────────────────────────────────────────
+
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({required this.child});
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(32),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.12),
-            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.15),
+              width: 1.2,
+            ),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 24),
+          child: child,
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppColors.primary,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
 
-// ─── Google Sign-In button ─────────────────────────────────────────────────
+// ─── Logo mark (LC with gradient) ─────────────────────────────────────────
 
-class _GoogleSignInButton extends StatelessWidget {
-  const _GoogleSignInButton({
+class _LogoMark extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF6366F1), Color(0xFF14B8A6)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: Text(
+          'LC',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Feature pills row ─────────────────────────────────────────────────────
+
+class _FeaturePillsRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const pills = [
+      ('📋', 'Tasks'),
+      ('📚', 'Academic'),
+      ('💰', 'Finance'),
+      ('🎯', 'Focus'),
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
+      children: pills.map((p) => _FeaturePill(emoji: p.$1, label: p.$2)).toList(),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  const _FeaturePill({required this.emoji, required this.label});
+  final String emoji;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(100),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.18),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 12)),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Error banner ──────────────────────────────────────────────────────────
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.error.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.error.withOpacity(0.35)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.error_outline, color: AppColors.error, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Glassmorphism Google Sign-In button ───────────────────────────────────
+
+class _GlassGoogleButton extends StatelessWidget {
+  const _GlassGoogleButton({
     required this.isLoading,
     required this.onPressed,
   });
-
   final bool isLoading;
   final VoidCallback? onPressed;
 
@@ -378,51 +509,56 @@ class _GoogleSignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1F2937),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          side: const BorderSide(color: Color(0xFFDDE1E7), width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          elevation: 1,
-          shadowColor: Colors.black.withOpacity(0.08),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+      child: GestureDetector(
+        onTap: onPressed,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.25),
+                  width: 1.2,
                 ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Google "G" logo
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: const BoxDecoration(shape: BoxShape.circle),
-                    child: CustomPaint(
-                      painter: _GoogleLogoPainter(),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Sign in with Google',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1F2937),
-                    ),
-                  ),
-                ],
               ),
+              child: isLoading
+                  ? const Center(
+                      child: SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CustomPaint(painter: _GoogleLogoPainter()),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Sign in with Google',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -437,18 +573,7 @@ class _GoogleLogoPainter extends CustomPainter {
     final cy = size.height / 2;
     final r = size.width / 2;
 
-    final bluePaint = Paint()..color = const Color(0xFF4285F4);
-    final redPaint = Paint()..color = const Color(0xFFEA4335);
-    final yellowPaint = Paint()..color = const Color(0xFFFBBC05);
-    final greenPaint = Paint()..color = const Color(0xFF34A853);
-
-    // Simplified G logo using arcs
-    final bgPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(Offset(cx, cy), r, bgPaint);
-
     final strokeW = r * 0.28;
-
-    // Blue arc (right side)
     final arcPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeW
@@ -490,7 +615,6 @@ class _GoogleLogoPainter extends CustomPainter {
       arcPaint,
     );
 
-    // Horizontal bar for "G"
     final barPaint = Paint()
       ..color = const Color(0xFF4285F4)
       ..strokeWidth = strokeW

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -168,31 +169,44 @@ class _MainShellState extends State<MainShell>
     );
   }
 
+  // ── Custom dark glassmorphism nav bar ─────────────────────────────────────
   Widget _buildNavBar(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          height: 80 + bottomPadding,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withOpacity(0.92),
+            border: const Border(
+              top: BorderSide(
+                color: Color(0x1AFFFFFF), // white ~10%
+                width: 1,
+              ),
+            ),
           ),
-        ],
-      ),
-      child: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
-        height: 72,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        animationDuration: const Duration(milliseconds: 350),
-        destinations: _destinations.map((d) {
-          return NavigationDestination(
-            icon: Icon(d.icon),
-            selectedIcon: Icon(d.selectedIcon),
-            label: d.label,
-            tooltip: d.label,
-          );
-        }).toList(),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 80,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(_destinations.length, (i) {
+                  final dest = _destinations[i];
+                  final isSelected = i == _selectedIndex;
+                  return _NavItem(
+                    icon: isSelected ? dest.selectedIcon : dest.icon,
+                    label: dest.label,
+                    isSelected: isSelected,
+                    onTap: () => _onDestinationSelected(i),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -244,30 +258,51 @@ class _MainShellState extends State<MainShell>
             ),
             const SizedBox(height: 12),
           ],
-          // Main FAB
+
+          // Main FAB — gradient with glow
           ValueListenableBuilder<int>(
             valueListenable: inboxBadgeCount,
             builder: (context, count, _) {
               return Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  FloatingActionButton(
-                    heroTag: 'quick_capture_fab',
-                    onPressed: _toggleFab,
-                    elevation: _fabExpanded ? 6 : 4,
-                    child: AnimatedBuilder(
-                      animation: _fabRotation,
-                      builder: (context, child) {
-                        return Transform.rotate(
-                          angle: _fabRotation.value * 2 * 3.14159,
-                          child: Icon(
-                            _fabExpanded
-                                ? Icons.close_rounded
-                                : Icons.add_rounded,
-                            size: 28,
-                          ),
-                        );
-                      },
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF6366F1), Color(0xFF14B8A6)],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withOpacity(0.5),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: FloatingActionButton(
+                      heroTag: 'quick_capture_fab',
+                      onPressed: _toggleFab,
+                      elevation: 0,
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      child: AnimatedBuilder(
+                        animation: _fabRotation,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: _fabRotation.value * 2 * 3.14159,
+                            child: Icon(
+                              _fabExpanded
+                                  ? Icons.close_rounded
+                                  : Icons.add_rounded,
+                              size: 28,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   if (count > 0 && !_fabExpanded)
@@ -305,6 +340,67 @@ class _MainShellState extends State<MainShell>
   }
 }
 
+// ─── Custom nav item ───────────────────────────────────────────────────────
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: isSelected
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+            : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: const Color(0xFF6366F1),
+                borderRadius: BorderRadius.circular(100),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              )
+            : null,
+        child: isSelected
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              )
+            : Icon(icon, color: Colors.white38, size: 22),
+      ),
+    );
+  }
+}
+
 // ─── Speed dial item ───────────────────────────────────────────────────────
 
 class _SpeedDialItem extends StatelessWidget {
@@ -328,24 +424,36 @@ class _SpeedDialItem extends StatelessWidget {
         // Label chip
         GestureDetector(
           onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B).withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
+                ),
+              ),
             ),
           ),
         ),

@@ -1,7 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:intl/intl.dart';
 
 import 'package:lifecli_app/core/constants/app_colors.dart';
@@ -98,15 +98,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: AppColors.primary,
         child: CustomScrollView(
           slivers: [
-            // App bar with greeting
-            _buildSliverAppBar(context),
+            // Gradient header with greeting + quick stats
+            _buildGradientHeader(context),
 
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 12),
-                  // Next class card
+                  const SizedBox(height: 16),
+                  // Next class card — indigo gradient glass
                   _NextClassCard(classInfo: _nextClass),
                   const SizedBox(height: 12),
                   // Exam countdown + load shedding row
@@ -118,6 +118,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Deadlines section
                   _SectionHeader(
                     title: 'Upcoming Deadlines',
+                    icon: Icons.event_rounded,
+                    iconColor: AppColors.error,
                     onSeeAll: () => context.go('/academic/planner'),
                   ),
                   const SizedBox(height: 8),
@@ -126,6 +128,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // Today's tasks
                   _SectionHeader(
                     title: "Today's Tasks",
+                    icon: Icons.check_circle_outline_rounded,
+                    iconColor: AppColors.primary,
                     onSeeAll: () => context.pushNamed('tasks'),
                   ),
                   const SizedBox(height: 8),
@@ -144,77 +148,166 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return SliverAppBar(
-      expandedHeight: 130,
-      floating: true,
-      snap: true,
-      pinned: false,
-      backgroundColor: theme.scaffoldBackgroundColor,
-      surfaceTintColor: Colors.transparent,
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
-        background: Padding(
-          padding: EdgeInsets.only(
-            top: MediaQuery.of(context).padding.top + 12,
-            left: 16,
-            right: 16,
-            bottom: 8,
+  // ── Gradient header ────────────────────────────────────────────────────────
+  Widget _buildGradientHeader(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Profile avatar
-              GestureDetector(
-                onTap: () => context.pushNamed('profile'),
-                child: _ProfileAvatar(
-                  photoUrl: GoogleAuthService.photoUrl,
-                  name: _firstName,
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Greeting
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding:
+                const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row: avatar + greeting + bell
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      '${_getGreeting()}, $_firstName 👋',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? Colors.white
-                            : const Color(0xFF0F172A),
+                    GestureDetector(
+                      onTap: () => context.pushNamed('profile'),
+                      child: _ProfileAvatar(
+                        photoUrl: GoogleAuthService.photoUrl,
+                        name: _firstName,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      DateFormat('EEEE, d MMMM yyyy').format(DateTime.now()),
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: isDark
-                            ? Colors.white54
-                            : const Color(0xFF64748B),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${_getGreeting()}, $_firstName 👋',
+                            style: GoogleFonts.inter(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat('EEEE, d MMMM yyyy')
+                                .format(DateTime.now()),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.notifications_none_rounded,
+                          color: Colors.white70),
+                      onPressed: () {},
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.15),
                       ),
                     ),
                   ],
                 ),
+
+                const SizedBox(height: 20),
+
+                // Quick stats row
+                _QuickStatsRow(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Quick Stats Row ───────────────────────────────────────────────────────
+
+class _QuickStatsRow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatChip(
+            label: 'Tasks Done',
+            value: '5',
+            icon: Icons.check_circle_outline_rounded,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatChip(
+            label: 'Study Hours',
+            value: '3.5h',
+            icon: Icons.menu_book_outlined,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatChip(
+            label: 'Streak',
+            value: '14 🔥',
+            icon: Icons.local_fire_department_outlined,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: Colors.white70, size: 14),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1,
+                ),
               ),
-              // Notification bell
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded),
-                onPressed: () {},
-                style: IconButton.styleFrom(
-                  backgroundColor: isDark
-                      ? const Color(0xFF1E293B)
-                      : const Color(0xFFF1F5F9),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: Colors.white60,
                 ),
               ),
             ],
@@ -237,26 +330,26 @@ class _ProfileAvatar extends StatelessWidget {
     if (photoUrl != null && photoUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: 26,
-        backgroundColor: AppColors.primaryContainer,
+        backgroundColor: Colors.white.withOpacity(0.2),
         backgroundImage: NetworkImage(photoUrl!),
       );
     }
     return CircleAvatar(
       radius: 26,
-      backgroundColor: AppColors.primaryContainer,
+      backgroundColor: Colors.white.withOpacity(0.2),
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : 'S',
         style: GoogleFonts.inter(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: AppColors.primary,
+          color: Colors.white,
         ),
       ),
     );
   }
 }
 
-// ─── Next Class Card ───────────────────────────────────────────────────────
+// ─── Next Class Card — indigo gradient with glass ──────────────────────────
 
 class _NextClassCard extends StatelessWidget {
   const _NextClassCard({required this.classInfo});
@@ -264,79 +357,86 @@ class _NextClassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0D9488), Color(0xFF14B8A6)],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.class_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Next Class',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withOpacity(0.75),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      classInfo.course,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${classInfo.time}  ·  ${classInfo.room}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.82),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withOpacity(0.65),
+              ),
+            ],
+          ),
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0D9488).withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.class_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Next Class',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withOpacity(0.8),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  classInfo.course,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${classInfo.time}  ·  ${classInfo.room}',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.85),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: Colors.white.withOpacity(0.7),
-          ),
-        ],
       ),
     );
   }
@@ -349,7 +449,6 @@ class _InfoChipsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Exam countdown chip
         Expanded(
           child: _InfoChip(
             icon: Icons.event_rounded,
@@ -360,7 +459,6 @@ class _InfoChipsRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        // Load shedding chip
         Expanded(
           child: _InfoChip(
             icon: Icons.power_off_rounded,
@@ -391,11 +489,15 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: isDark ? color.withOpacity(0.15) : bgColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border(
+          left: BorderSide(color: color, width: 3),
+        ),
       ),
       child: Row(
         children: [
@@ -478,16 +580,23 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFF334155)
-              : const Color(0xFFE2E8F0),
+        border: Border(
+          left: BorderSide(color: color, width: 3),
+          top: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+          right: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
+          bottom: BorderSide(
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: color.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -594,7 +703,9 @@ class _ExpensesSummaryCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : const Color(0xFF0F172A),
                   ),
                 ),
                 TextSpan(
@@ -690,7 +801,8 @@ class _HabitRow extends StatelessWidget {
         Expanded(
           child: Text(
             name,
-            style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF475569)),
+            style: GoogleFonts.inter(
+                fontSize: 10, color: const Color(0xFF475569)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -722,7 +834,9 @@ class _LoansSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isPositive ? '+৳${balance.toInt()}' : '-৳${balance.abs().toInt()}',
+            isPositive
+                ? '+৳${balance.toInt()}'
+                : '-৳${balance.abs().toInt()}',
             style: GoogleFonts.inter(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -747,24 +861,38 @@ class _LoansSummaryCard extends StatelessWidget {
 // ─── Section Header ────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.onSeeAll});
+  const _SectionHeader({
+    required this.title,
+    this.icon,
+    this.iconColor,
+    this.onSeeAll,
+  });
   final String title;
+  final IconData? icon;
+  final Color? iconColor;
   final VoidCallback? onSeeAll;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          title,
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : const Color(0xFF0F172A),
-          ),
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18, color: iconColor ?? AppColors.primary),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
+            ),
+          ],
         ),
         if (onSeeAll != null)
           TextButton(
@@ -812,10 +940,7 @@ class _DeadlinesStrip extends StatelessWidget {
         itemBuilder: (context, i) {
           final d = deadlines[i];
           final color = _urgencyColor(d.daysLeft);
-          return _DeadlineCard(
-            deadline: d,
-            color: color,
-          );
+          return _DeadlineCard(deadline: d, color: color);
         },
       ),
     );
@@ -835,7 +960,12 @@ class _DeadlineCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border(
+          left: BorderSide(color: color, width: 3),
+          top: BorderSide(color: color.withOpacity(0.25)),
+          right: BorderSide(color: color.withOpacity(0.25)),
+          bottom: BorderSide(color: color.withOpacity(0.25)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -968,7 +1098,9 @@ class _TodaysTasksList extends StatelessWidget {
                 onDelete(i);
               }
             },
-            child: _TaskListTile(task: task, priorityColor: _priorityColor(task.priority)),
+            child: _TaskListTile(
+                task: task,
+                priorityColor: _priorityColor(task.priority)),
           ),
         );
       }).toList(),
@@ -1035,28 +1167,42 @@ class _TaskListTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        border: Border(
+          left: BorderSide(color: priorityColor, width: 3),
+          top: BorderSide(
+            color: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+          ),
+          right: BorderSide(
+            color: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+          ),
+          bottom: BorderSide(
+            color: isDark
+                ? const Color(0xFF334155)
+                : const Color(0xFFE2E8F0),
+          ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: priorityColor.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // Priority indicator
-          Container(
-            width: 4,
-            height: 40,
-            decoration: BoxDecoration(
-              color: priorityColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 4),
           // Checkbox
           Icon(
             task.completed
                 ? Icons.check_circle_rounded
                 : Icons.radio_button_unchecked_rounded,
-            color: task.completed ? AppColors.success : const Color(0xFF94A3B8),
+            color:
+                task.completed ? AppColors.success : const Color(0xFF94A3B8),
             size: 22,
           ),
           const SizedBox(width: 10),
@@ -1072,7 +1218,9 @@ class _TaskListTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: task.completed
                         ? const Color(0xFF94A3B8)
-                        : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                        : (isDark
+                            ? Colors.white
+                            : const Color(0xFF0F172A)),
                     decoration: task.completed
                         ? TextDecoration.lineThrough
                         : TextDecoration.none,

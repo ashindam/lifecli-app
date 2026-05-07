@@ -1,37 +1,42 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis_auth/googleapis_auth.dart';
 import 'package:http/http.dart' as http;
 
 class GoogleAuthService {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [
-      'email',
-      'profile',
-      drive.DriveApi.driveAppdataScope,
-    ],
-  );
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static GoogleSignInAccount? _currentUser;
-  static GoogleSignInAccount? get currentUser => _currentUser;
-  static bool get isSignedIn => _currentUser != null;
+  static User? get currentUser => _auth.currentUser;
+  static bool get isSignedIn => _auth.currentUser != null;
 
   static Future<void> init() async {
-    _googleSignIn.onCurrentUserChanged.listen((account) {
-      _currentUser = account;
-    });
-    try {
-      _currentUser = await _googleSignIn.signInSilently();
-    } catch (e) {
-      debugPrint('Silent sign-in failed: $e');
-    }
+    // Firebase automatically restores the session — nothing extra needed
   }
 
-  static Future<GoogleSignInAccount?> signIn() async {
+  static Future<User?> signIn() async {
     try {
-      _currentUser = await _googleSignIn.signIn();
-      return _currentUser;
+      if (kIsWeb) {
+        // Web: use Firebase popup sign-in
+        final provider = GoogleAuthProvider();
+        final userCredential = await _auth.signInWithPopup(provider);
+        return userCredential.user;
+      } else {
+        // Mobile: use google_sign_in + Firebase credential
+        final googleSignIn = GoogleSignIn(
+          scopes: ['email', 'profile', drive.DriveApi.driveAppdataScope],
+        );
+        final googleUser = await googleSignIn.signIn();
+        if (googleUser == null) return null;
+
+        final googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        final userCredential = await _auth.signInWithCredential(credential);
+        return userCredential.user;
+      }
     } catch (e) {
       debugPrint('Sign-in error: $e');
       return null;
@@ -39,15 +44,19 @@ class GoogleAuthService {
   }
 
   static Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    _currentUser = null;
+    await _auth.signOut();
+    if (!kIsWeb) {
+      await GoogleSignIn().signOut();
+    }
   }
 
   static Future<http.Client?> getAuthClient() async {
-    if (_currentUser == null) return null;
+    if (_auth.currentUser == null) return null;
     try {
-      final headers = await _currentUser!.authHeaders;
-      return _AuthenticatedClient(http.Client(), headers);
+      final token = await _auth.currentUser!.getIdToken();
+      if (token == null) return null;
+      return _AuthenticatedClient(
+          http.Client(), {'Authorization': 'Bearer $token'});
     } catch (e) {
       debugPrint('Auth client error: $e');
       return null;
@@ -60,10 +69,10 @@ class GoogleAuthService {
     return drive.DriveApi(client);
   }
 
-  static String? get displayName => _currentUser?.displayName;
-  static String? get email => _currentUser?.email;
-  static String? get photoUrl => _currentUser?.photoUrl;
-  static String? get userId => _currentUser?.id;
+  static String? get displayName => _auth.currentUser?.displayName;
+  static String? get email => _auth.currentUser?.email;
+  static String? get photoUrl => _auth.currentUser?.photoURL;
+  static String? get userId => _auth.currentUser?.uid;
 }
 
 class _AuthenticatedClient extends http.BaseClient {

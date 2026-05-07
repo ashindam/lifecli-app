@@ -1,11 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../services/google_auth_service.dart';
 
 class AuthState {
   final bool isSignedIn;
   final bool isLoading;
-  final GoogleSignInAccount? user;
+  final User? user;
   final String? error;
 
   const AuthState({
@@ -18,7 +18,7 @@ class AuthState {
   AuthState copyWith({
     bool? isSignedIn,
     bool? isLoading,
-    GoogleSignInAccount? user,
+    User? user,
     String? error,
   }) => AuthState(
     isSignedIn: isSignedIn ?? this.isSignedIn,
@@ -61,7 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   String? get displayName => state.user?.displayName;
   String? get email => state.user?.email;
-  String? get photoUrl => state.user?.photoUrl;
+  String? get photoUrl => state.user?.photoURL;
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>(

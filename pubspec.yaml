@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+
   # Auth & Sync
   google_sign_in: ^6.2.1
   googleapis: ^13.1.0
